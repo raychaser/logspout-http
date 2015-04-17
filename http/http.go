@@ -1,6 +1,7 @@
 package http
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -8,6 +9,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -112,10 +114,15 @@ func NewHTTPAdapter(route *router.Route) (router.LogAdapter, error) {
 	// Figure out the URI and create the HTTP client
 	defaultPath := ""
 	path := getStringParameter(route.Options, "http.path", defaultPath)
-	url := fmt.Sprintf("%s://%s%s", route.Adapter, route.Address, path)
-	debug("http: url:", url)
+	endpointUrl := fmt.Sprintf("%s://%s%s", route.Adapter, route.Address, path)
+	debug("http: url:", endpointUrl)
 	transport := &http.Transport{}
 	transport.Dial = dial
+
+	proxyUrl, _ := url.Parse("http://192.168.114.217:8888")
+	transport.Proxy = http.ProxyURL(proxyUrl)
+	transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+
 	client := &http.Client{Transport: transport}
 
 	// Determine the buffer capacity
@@ -144,7 +151,7 @@ func NewHTTPAdapter(route *router.Route) (router.LogAdapter, error) {
 	// Make the HTTP adapter
 	return &HTTPAdapter{
 		route:    route,
-		url:      url,
+		url:      endpointUrl,
 		client:   client,
 		buffer:   buffer,
 		timer:    timer,
@@ -164,27 +171,11 @@ func (a *HTTPAdapter) Stream(logstream chan *router.Message) {
 			a.buffer = append(a.buffer, message)
 			a.bufferMutex.Unlock()
 
-			m := message
-			httpMessage := HTTPMessage{
-				Message:  m.Data,
-				Time:     m.Time.Format(time.RFC3339),
-				Source:   m.Source,
-				Name:     m.Container.Name,
-				ID:       m.Container.ID,
-				Image:    m.Container.Config.Image,
-				Hostname: m.Container.Config.Hostname,
-			}
-			mj, _ := json.Marshal(httpMessage)
-			debug("http: add:", string(mj))
-
 			// Flush if the buffer is at capacity
 			if len(a.buffer) >= cap(a.buffer) {
-				debug("http: full, len:", len(a.buffer), "cap:", cap(a.buffer))
-
 				a.flushHttp("full")
 			}
 		case <-a.timer.C:
-			debug("http: timeout, len:", len(a.buffer), "cap:", cap(a.buffer))
 
 			// Timeout, flush
 			a.flushHttp("timeout")
@@ -207,7 +198,6 @@ func (a *HTTPAdapter) flushHttp(reason string) {
 
 	// Return immediately if the buffer is empty
 	if len(a.buffer) < 1 {
-		debug("http: no messages on timeout")
 		return
 	}
 
