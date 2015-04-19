@@ -5,9 +5,9 @@ EXPOSE 8000
 ENV GOPATH /go
 RUN apk-install go git mercurial
 COPY http/ /go/src/github.com/raychaser/logspout-http/http
-COPY modules.go /go/src/github.com/raychaser/logspout-http/modules.go
 COPY logspout /go/src/github.com/gliderlabs/logspout
 WORKDIR /go/src/github.com/gliderlabs/logspout
+COPY modules.go /go/src/github.com/gliderlabs/logspout/modules.go
 RUN go get
 CMD echo Running go get \
     && go get \

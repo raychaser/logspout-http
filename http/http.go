@@ -119,9 +119,18 @@ func NewHTTPAdapter(route *router.Route) (router.LogAdapter, error) {
 	transport := &http.Transport{}
 	transport.Dial = dial
 
-	proxyUrl, _ := url.Parse("http://192.168.114.217:8888")
-	transport.Proxy = http.ProxyURL(proxyUrl)
-	transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	// Figure out if we need a proxy
+	defaultProxyUrl := ""
+	proxyUrlString := getStringParameter(route.Options, "http.proxy", defaultProxyUrl)
+	if proxyUrlString != "" {
+		proxyUrl, err := url.Parse(proxyUrlString)
+		if err != nil {
+			die("", "http: cannot parse proxy url:", err, proxyUrlString)
+		}
+		transport.Proxy = http.ProxyURL(proxyUrl)
+		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+		debug("http: proxy url:", proxyUrl)
+	}
 
 	client := &http.Client{Transport: transport}
 
