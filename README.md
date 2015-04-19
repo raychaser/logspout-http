@@ -12,10 +12,12 @@ This again assumes that the unique token for the Sumo Logic HTTP collector endpo
 
 ```bash
 $ docker run -e DEBUG=1 \
-    -v=/var/run/docker.sock:/var/run/docker.sock \
-	raychaser/logspout-http:latest \   
-    https://collectors.sumologic.com?http.buffer.timeout=1s\&http.buffer.capacity=100\&http.path=/receiver/v1/http/$SUMO_HTTP_TOKEN
+    -v /var/run/docker.sock:/tmp/docker.sock \
+    -e LOGSPOUT=ignore \
+    raychaser/logspout-http:latest \
+    https://collectors.sumologic.com?http.path=/receiver/v1/http/$SUMO_HTTP_TOKEN\&http.gzip=true
 ```
+
 
 ### A Note On The Form Of The Route Parameter
 
@@ -31,11 +33,16 @@ But for Logspout, it needs to be written like this:
 https://collectors.sumologic.com?http.path=/receiver/v1/http/SUMO_HTTP_TOKEN
 ```
 
-The HTTP adapter also supports 2 parameters to control the buffer capacity and timeout used to determine when the buffer is being flushed if the capacity of the buffer isn't reached in time. The default values are 100 for the buffer capacity and 1000ms for the timeout. The parameters are specified in the URI. For example, to change the timeout to 30 seconds, and make a buffer of only 5 messages, use this URI.
 
-```
-https://collectors.sumologic.com?http.path=/receiver/v1/http/SUMO_HTTP_TOKEN\&http.buffer.timeout=30s\&http.buffer.capacity=5
-```
+### Additional Parameters
+
+In addition to the `http.path` parameter discussed above, the following parameters are available:
+
+`http.buffer.capacity` controls the size of a buffer used to accumulate logs. The default capacity of the buffer is 100 logs.
+
+`http.buffer.timeout` indicates after how much time the adapter will send the logs accumulated in the buffer if the buffer capacity hasn't been reached. The default timeout is 1000ms (1s).
+
+If `http.gzip` is set to true, the logs will be compressed with GZIP. This is off by default, but for example supported by Sumo Logic.
 
 
 ### Development 
@@ -43,7 +50,7 @@ https://collectors.sumologic.com?http.path=/receiver/v1/http/SUMO_HTTP_TOKEN\&ht
 This assumes that the unique token for the Sumo Logic HTTP collector endpoint is in the environment as ```$SUMO_HTTP_TOKEN```.
 
 ```bash
-$ ROUTE=https://collectors.sumologic.com?http.buffer.timeout=2s\&http.buffer.capacity=10\&http.path=/receiver/v1/http/$SUMO_HTTP_TOKEN \
+$ ROUTE=https://collectors.sumologic.com?http.buffer.timeout=1s\&http.buffer.capacity=100\&http.path=/receiver/v1/http/$SUMO_HTTP_TOKEN\&http.gzip=true \
   make dev
 ```
 
@@ -53,10 +60,16 @@ To create some test messages
 $ docker run --rm --name test ubuntu bash -c 'NEW_UUID=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1); for i in `seq 1 10`; do echo $NEW_UUID Hello $i; sleep 1; done'
 ```
 
-If you are a fan of Loggly, use this route ($LOGGLY_HTTP_TOKEN is your Loggly HTTP input token):
+If you are a fan of Loggly, use this route (`$LOGGLY_HTTP_TOKEN` is your Loggly HTTP input token):
 
 ```bash
-$ ROUTE=http://logs-01.loggly.com?http.buffer.timeout=30s\&http.buffer.capacity=5\&http.path=/bulk/$LOGGLY_HTTP_TOKEN/tag/bulk/ make dev
+$ ROUTE=http://logs-01.loggly.com?http.path=/bulk/$LOGGLY_HTTP_TOKEN/tag/bulk/ make dev
+```
+
+Loggly does not support GZIP compression. It does however support HTTPS, so this will also work:
+
+```bash
+$ ROUTE=https://logs-01.loggly.com?http.path=/bulk/$LOGGLY_HTTP_TOKEN/tag/bulk/ make dev
 ```
 
 
@@ -64,8 +77,7 @@ $ ROUTE=http://logs-01.loggly.com?http.buffer.timeout=30s\&http.buffer.capacity=
 
 - [ ] Deal with errors and non-200 responses... somehow
 - [ ] Make sure we send back the AWS ELB cookie if we get one
-- [ ] Add compression option
-
+- [X] Add compression option
 
 
 ### Issues Found While Writing This Adapter
@@ -82,7 +94,6 @@ $ DEBUG=1 \
     ROUTE=https://collectors.sumologic.com?http.buffer.timeout=30s\& make dev
 ```
 * Docker 1.6 with ```--log-driver=none``` or ```--log-driver=syslog``` will break Logspout
-
 
 
 ### Issue With --log-driver In Docker 1.6
@@ -136,3 +147,4 @@ docker run --rm -i --name test3 ubuntu bash -c 'NEW_UUID=$(cat /dev/urandom | tr
 
 docker run --rm -i --name test4 ubuntu bash -c 'NEW_UUID=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1); for i in `seq 1 1000000`; do echo $NEW_UUID Hello $i; sleep .001; done'
 ```
+

@@ -1,6 +1,8 @@
 package http
 
 import (
+	"bytes"
+	"compress/gzip"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -106,6 +108,7 @@ type HTTPAdapter struct {
 	timeout           time.Duration
 	totalMessageCount int
 	bufferMutex       sync.Mutex
+	useGzip           bool
 }
 
 // NewHTTPAdapter creates an HTTPAdapter
@@ -132,6 +135,7 @@ func NewHTTPAdapter(route *router.Route) (router.LogAdapter, error) {
 		debug("http: proxy url:", proxyUrl)
 	}
 
+	// Create the client
 	client := &http.Client{Transport: transport}
 
 	// Determine the buffer capacity
@@ -157,6 +161,14 @@ func NewHTTPAdapter(route *router.Route) (router.LogAdapter, error) {
 	}
 	timer := time.NewTimer(timeout)
 
+	// Figure out whether we should use GZIP compression
+	useGzip := false
+	useGZipString := getStringParameter(route.Options, "http.gzip", "false")
+	if useGZipString == "true" {
+		useGzip = true
+		debug("http: gzip compression enabled")
+	}
+
 	// Make the HTTP adapter
 	return &HTTPAdapter{
 		route:    route,
@@ -166,6 +178,7 @@ func NewHTTPAdapter(route *router.Route) (router.LogAdapter, error) {
 		timer:    timer,
 		capacity: capacity,
 		timeout:  timeout,
+		useGzip:  useGzip,
 	}, nil
 }
 
@@ -242,14 +255,8 @@ func (a *HTTPAdapter) flushHttp(reason string) {
 
 	go func() {
 
-		// Send the payload.
-		request, err := http.NewRequest(
-			"POST", a.url, strings.NewReader(payload))
-		if err != nil {
-			debug("http: error on http.NewRequest:", err, a.url)
-			// TODO @raychaser - now what?
-			die("", "http: error on http.NewRequest:", err, a.url)
-		}
+		// Create the request and send it on its way
+		request := createRequest(a.url, a.useGzip, payload)
 		start := time.Now()
 		response, err := a.client.Do(request)
 		if err != nil {
@@ -277,6 +284,41 @@ func (a *HTTPAdapter) flushHttp(reason string) {
 		debug("http: flushed:", reason, "messages:", len(messages),
 			"in:", timeAll, "total:", a.totalMessageCount)
 	}()
+}
+
+// Create the request based on whether GZIP compression is to be used
+func createRequest(url string, useGzip bool, payload string) *http.Request {
+	var request *http.Request
+	if useGzip {
+		gzipBuffer := new(bytes.Buffer)
+		gzipWriter := gzip.NewWriter(gzipBuffer)
+		_, err := gzipWriter.Write([]byte(payload))
+		if err != nil {
+			// TODO @raychaser - now what?
+			die("http: unable to write to GZIP writer:", err)
+		}
+		err = gzipWriter.Close()
+		if err != nil {
+			// TODO @raychaser - now what?
+			die("http: unable to close GZIP writer:", err)
+		}
+		request, err = http.NewRequest("POST", url, gzipBuffer)
+		if err != nil {
+			debug("http: error on http.NewRequest:", err, url)
+			// TODO @raychaser - now what?
+			die("", "http: error on http.NewRequest:", err, url)
+		}
+		request.Header.Set("Content-Encoding", "gzip")
+	} else {
+		var err error
+		request, err = http.NewRequest("POST", url, strings.NewReader(payload))
+		if err != nil {
+			debug("http: error on http.NewRequest:", err, url)
+			// TODO @raychaser - now what?
+			die("", "http: error on http.NewRequest:", err, url)
+		}
+	}
+	return request
 }
 
 // HTTPMessage is a simple JSON representation of the log message.
