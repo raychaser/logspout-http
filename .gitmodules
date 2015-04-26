@@ -1,0 +1,3 @@
+[submodule "logspout"]
+	path = logspout
+	url = https://github.com/raychaser/logspout
