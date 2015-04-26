@@ -50,14 +50,13 @@ If `http.gzip` is set to true, the logs will be compressed with GZIP. This is of
 This assumes that the unique token for the Sumo Logic HTTP collector endpoint is in the environment as ```$SUMO_HTTP_TOKEN```.
 
 ```bash
-$ ROUTE=https://collectors.sumologic.com?http.buffer.timeout=1s\&http.buffer.capacity=100\&http.path=/receiver/v1/http/$SUMO_HTTP_TOKEN\&http.gzip=true \
-  make dev
+$ DEBUG=1 ROUTE="https://collectors.sumologic.com?http.buffer.timeout=1s\&http.buffer.capacity=100\&http.path=/receiver/v1/http/$SUMO_HTTP_TOKEN\&http.gzip=true" make dev
 ```
 
 To create some test messages
 
 ```bash
-$ docker run --rm --name test ubuntu bash -c 'NEW_UUID=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1); for i in `seq 1 10`; do echo $NEW_UUID Hello $i; sleep 1; done'
+$ docker run --rm --name test ubuntu bash -c 'NEW_UUID=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1); for i in `seq 1 10`; do echo $NEW_UUID Hello $i; sleep 1; done' && CID=$(docker ps -l -q)
 ```
 
 If you are a fan of Loggly, use this route (`$LOGGLY_HTTP_TOKEN` is your Loggly HTTP input token):
