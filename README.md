@@ -50,7 +50,7 @@ If `http.gzip` is set to true, the logs will be compressed with GZIP. This is of
 This assumes that the unique token for the Sumo Logic HTTP collector endpoint is in the environment as ```$SUMO_HTTP_TOKEN```.
 
 ```bash
-$ DEBUG=1 ROUTE="https://collectors.sumologic.com?http.buffer.timeout=1s\&http.buffer.capacity=100\&http.path=/receiver/v1/http/$SUMO_HTTP_TOKEN\&http.gzip=true" make dev
+$ DEBUG=1 ROUTE=https://collectors.sumologic.com?http.buffer.timeout=1s\&http.buffer.capacity=100\&http.path=/receiver/v1/http/$SUMO_HTTP_TOKEN\&http.gzip=true make dev
 ```
 
 To create some test messages
