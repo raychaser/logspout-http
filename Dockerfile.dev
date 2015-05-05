@@ -6,7 +6,6 @@ ENV GOPATH /go
 RUN apk-install go git mercurial
 COPY http/ /go/src/github.com/raychaser/logspout-http/http
 COPY logspout /go/src/github.com/gliderlabs/logspout
-COPY go-dockerclient /go/src/github.com/fsouza/go-dockerclient
 WORKDIR /go/src/github.com/gliderlabs/logspout
 COPY modules.go /go/src/github.com/gliderlabs/logspout/modules.go
 RUN go get
