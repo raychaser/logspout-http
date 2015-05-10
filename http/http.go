@@ -326,8 +326,8 @@ type HTTPMessage struct {
 	Message  string `json:"message"`
 	Time     string `json:"time"`
 	Source   string `json:"source"`
-	Name     string `json:"docker.name"`
-	ID       string `json:"docker.id"`
-	Image    string `json:"docker.image"`
-	Hostname string `json:"docker.hostname"`
+	Name     string `json:"docker_name"`
+	ID       string `json:"docker_id"`
+	Image    string `json:"docker_image"`
+	Hostname string `json:"docker_hostname"`
 }

@@ -3,13 +3,8 @@ VOLUME /mnt/routes
 EXPOSE 8000
 
 ENV GOPATH /go
-RUN apk-install go git mercurial
-COPY http/ /go/src/github.com/raychaser/logspout-http/http
-COPY logspout /go/src/github.com/gliderlabs/logspout
+RUN apk-install go
+COPY tmp/src /go/src
 WORKDIR /go/src/github.com/gliderlabs/logspout
-COPY modules.go /go/src/github.com/gliderlabs/logspout/modules.go
-RUN go get
-CMD echo Running go get \
-    && go get \
-    && go build -ldflags "-X main.Version dev" -o /bin/logspout \
+CMD go build -ldflags "-X main.Version dev" -o /bin/logspout \
 	&& exec /bin/logspout
