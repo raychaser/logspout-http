@@ -36,14 +36,6 @@ func die(v ...interface{}) {
 	panic(fmt.Sprintln(v...))
 }
 
-func getopt(name, dfault string) string {
-	value := os.Getenv(name)
-	if value == "" {
-		value = dfault
-	}
-	return value
-}
-
 func getStringParameter(
 	options map[string]string, parameterName string, dfault string) string {
 
@@ -109,6 +101,7 @@ type HTTPAdapter struct {
 	totalMessageCount int
 	bufferMutex       sync.Mutex
 	useGzip           bool
+	crash			  bool
 }
 
 // NewHTTPAdapter creates an HTTPAdapter
@@ -169,6 +162,14 @@ func NewHTTPAdapter(route *router.Route) (router.LogAdapter, error) {
 		debug("http: gzip compression enabled")
 	}
 
+	// Should we crash on an error or keep going?
+	crash := true
+	crashString := getStringParameter(route.Options, "http.crash", "true")
+	if crashString == "false" {
+		crash = false
+		debug("http: don't crash, keep going")
+	}
+
 	// Make the HTTP adapter
 	return &HTTPAdapter{
 		route:    route,
@@ -179,6 +180,7 @@ func NewHTTPAdapter(route *router.Route) (router.LogAdapter, error) {
 		capacity: capacity,
 		timeout:  timeout,
 		useGzip:  useGzip,
+		crash:    crash,
 	}, nil
 }
 
@@ -262,21 +264,24 @@ func (a *HTTPAdapter) flushHttp(reason string) {
 		if err != nil {
 			debug("http - error on client.Do:", err, a.url)
 			// TODO @raychaser - now what?
-			die("http - error on client.Do:", err, a.url)
+			if a.crash {
+				die("http - error on client.Do:", err, a.url)
+			} else {
+				debug("http: error on client.Do:", err)
+			}
 		}
 		if response.StatusCode != 200 {
 			debug("http: response not 200 but", response.StatusCode)
 			// TODO @raychaser - now what?
-			die("http: response not 200 but", response.StatusCode)
+			if a.crash {
+				die("http: response not 200 but", response.StatusCode)
+			}
 		}
 
 		// Make sure the entire response body is read so the HTTP
 		// connection can be reused
 		io.Copy(ioutil.Discard, response.Body)
 		response.Body.Close()
-
-		//		debug(fmt.Sprintf("%#v", request.TLS))
-		//		debug(fmt.Sprintf("%#v", response))
 
 		// Bookkeeping, logging
 		timeAll := time.Since(start)
