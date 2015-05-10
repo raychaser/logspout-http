@@ -1,0 +1,55 @@
+{
+	"ImportPath": "github.com/raychaser/logspout-http",
+	"GoVersion": "go1.4.2",
+	"Deps": [
+		{
+			"ImportPath": "github.com/Sirupsen/logrus",
+			"Comment": "v0.7.3-4-gaaf92c9",
+			"Rev": "aaf92c95712104318fc35409745f1533aa5ff327"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/archive",
+			"Comment": "v1.4.1-3335-g7699cee",
+			"Rev": "7699cee247664988868e9cab480e795dbea927cb"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/fileutils",
+			"Comment": "v1.4.1-3335-g7699cee",
+			"Rev": "7699cee247664988868e9cab480e795dbea927cb"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/ioutils",
+			"Comment": "v1.4.1-3335-g7699cee",
+			"Rev": "7699cee247664988868e9cab480e795dbea927cb"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/pools",
+			"Comment": "v1.4.1-3335-g7699cee",
+			"Rev": "7699cee247664988868e9cab480e795dbea927cb"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/promise",
+			"Comment": "v1.4.1-3335-g7699cee",
+			"Rev": "7699cee247664988868e9cab480e795dbea927cb"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/system",
+			"Comment": "v1.4.1-3335-g7699cee",
+			"Rev": "7699cee247664988868e9cab480e795dbea927cb"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/units",
+			"Comment": "v1.4.1-3335-g7699cee",
+			"Rev": "7699cee247664988868e9cab480e795dbea927cb"
+		},
+		{
+			"ImportPath": "github.com/fsouza/go-dockerclient",
+			"Rev": "0ba7f0a32981ca4c1043c245017eb099708695ef"
+		},
+		{
+			"ImportPath": "github.com/gliderlabs/logspout/router",
+			"Comment": "v1-69-g3e49b29",
+			"Rev": "3e49b29b1faa3ed76194020014ed9f4ce37bc71f"
+		}
+	]
+}
