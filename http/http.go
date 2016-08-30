@@ -265,32 +265,39 @@ func (a *HTTPAdapter) flushHttp(reason string) {
 
 	go func() {
 
-		// Create the request and send it on its way
-		request := createRequest(a.url, a.user, a.password, a.useGzip, payload)
-		start := time.Now()
-		response, err := a.client.Do(request)
-		if err != nil {
-			debug("http - error on client.Do:", err, a.url)
-			// TODO @raychaser - now what?
-			if a.crash {
-				die("http - error on client.Do:", err, a.url)
+		for {
+			// Create the request and send it on its way
+			request := createRequest(a.url, a.user, a.password, a.useGzip, payload)
+			start := time.Now()
+			response, err := a.client.Do(request)
+			if err != nil {
+				debug("http - error on client.Do:", err, a.url)
+				// TODO @raychaser - now what?
+				if a.crash {
+					die("http - error on client.Do:", err, a.url)
+				} else {
+					log.Println("http: error on client.Do:", err)
+				}
+			}
+			if response.StatusCode != 200 {
+				log.Printl("http: response not 200 but", response.StatusCode)
+				// TODO @raychaser - now what?
+				if a.crash {
+					die("http: response not 200 but", response.StatusCode)
+				}
+			}
+
+			// Make sure the entire response body is read so the HTTP
+			// connection can be reused
+			io.Copy(ioutil.Discard, response.Body)
+			response.Body.Close()
+			if (err == nil && response.StatusCode == 200) {
+				break
 			} else {
-				debug("http: error on client.Do:", err)
+				log.Println("retrying after 2s...")
+				time.Sleep(time.Second * 2)
 			}
 		}
-		if response.StatusCode != 200 {
-			debug("http: response not 200 but", response.StatusCode)
-			// TODO @raychaser - now what?
-			if a.crash {
-				die("http: response not 200 but", response.StatusCode)
-			}
-		}
-
-		// Make sure the entire response body is read so the HTTP
-		// connection can be reused
-		io.Copy(ioutil.Discard, response.Body)
-		response.Body.Close()
-
 		// Bookkeeping, logging
 		timeAll := time.Since(start)
 		a.totalMessageCount += len(messages)
