@@ -44,9 +44,12 @@ In addition to the `http.path` parameter discussed above, the following paramete
 
 If `http.gzip` is set to true, the logs will be compressed with GZIP. This is off by default, but for example supported by Sumo Logic.
 
+Override docker hostname with `hostname` parameter
 
 ### Basic Http Authentication
 Use `http.user` and `http.password` parameters to set Authorization header
+
+
 
 ### Development 
 

@@ -101,7 +101,8 @@ type HTTPAdapter struct {
 	totalMessageCount int
 	bufferMutex       sync.Mutex
 	useGzip           bool
-	crash			  bool
+	crash             bool
+	hostname          string
 	user              string
 	password          string
 }
@@ -176,6 +177,9 @@ func NewHTTPAdapter(route *router.Route) (router.LogAdapter, error) {
 		debug("http: don't crash, keep going")
 	}
 
+	// Override docker hostname with a custom hostname
+	hostname := getStringParameter(route.Options, "hostname", "")
+
 	// Make the HTTP adapter
 	return &HTTPAdapter{
 		route:    route,
@@ -187,6 +191,7 @@ func NewHTTPAdapter(route *router.Route) (router.LogAdapter, error) {
 		timeout:  timeout,
 		useGzip:  useGzip,
 		crash:    crash,
+		hostname: hostname,
 		user:     user,
 		password: password,
 	}, nil
@@ -243,6 +248,10 @@ func (a *HTTPAdapter) flushHttp(reason string) {
 	messages := make([]string, 0, len(buffer))
 	for i := range buffer {
 		m := buffer[i]
+		hostname := a.hostname
+		if (hostname == "") {
+			hostname = m.Container.Config.Hostname
+		}
 		httpMessage := HTTPMessage{
 			Message:  m.Data,
 			Time:     m.Time.Format(time.RFC3339),
@@ -250,7 +259,7 @@ func (a *HTTPAdapter) flushHttp(reason string) {
 			Name:     m.Container.Name,
 			ID:       m.Container.ID,
 			Image:    m.Container.Config.Image,
-			Hostname: m.Container.Config.Hostname,
+			Hostname: hostname,
 		}
 		message, err := json.Marshal(httpMessage)
 		if err != nil {
