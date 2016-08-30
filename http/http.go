@@ -102,6 +102,8 @@ type HTTPAdapter struct {
 	bufferMutex       sync.Mutex
 	useGzip           bool
 	crash			  bool
+	user              string
+	password          string
 }
 
 // NewHTTPAdapter creates an HTTPAdapter
@@ -110,8 +112,12 @@ func NewHTTPAdapter(route *router.Route) (router.LogAdapter, error) {
 	// Figure out the URI and create the HTTP client
 	defaultPath := ""
 	path := getStringParameter(route.Options, "http.path", defaultPath)
+	user := getStringParameter(route.Options, "http.user", "")
+	password := getStringParameter(route.Options, "http.password", "")
 	endpointUrl := fmt.Sprintf("%s://%s%s", route.Adapter, route.Address, path)
 	debug("http: url:", endpointUrl)
+	debug("user:",user)
+	debug("password:", password)
 	transport := &http.Transport{}
 	transport.Dial = dial
 
@@ -181,6 +187,8 @@ func NewHTTPAdapter(route *router.Route) (router.LogAdapter, error) {
 		timeout:  timeout,
 		useGzip:  useGzip,
 		crash:    crash,
+		user:     user,
+		password: password,
 	}, nil
 }
 
@@ -258,7 +266,7 @@ func (a *HTTPAdapter) flushHttp(reason string) {
 	go func() {
 
 		// Create the request and send it on its way
-		request := createRequest(a.url, a.useGzip, payload)
+		request := createRequest(a.url, a.user, a.password, a.useGzip, payload)
 		start := time.Now()
 		response, err := a.client.Do(request)
 		if err != nil {
@@ -292,7 +300,7 @@ func (a *HTTPAdapter) flushHttp(reason string) {
 }
 
 // Create the request based on whether GZIP compression is to be used
-func createRequest(url string, useGzip bool, payload string) *http.Request {
+func createRequest(url string, user string, password string, useGzip bool, payload string) *http.Request {
 	var request *http.Request
 	if useGzip {
 		gzipBuffer := new(bytes.Buffer)
@@ -322,6 +330,9 @@ func createRequest(url string, useGzip bool, payload string) *http.Request {
 			// TODO @raychaser - now what?
 			die("", "http: error on http.NewRequest:", err, url)
 		}
+	}
+	if (user != "" && password != "") {
+		request.SetBasicAuth(user, password)
 	}
 	return request
 }

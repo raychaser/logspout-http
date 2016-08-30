@@ -45,6 +45,9 @@ In addition to the `http.path` parameter discussed above, the following paramete
 If `http.gzip` is set to true, the logs will be compressed with GZIP. This is off by default, but for example supported by Sumo Logic.
 
 
+### Basic Http Authentication
+Use `http.user` and `http.password` parameters to set Authorization header
+
 ### Development 
 
 This assumes that the unique token for the Sumo Logic HTTP collector endpoint is in the environment as ```$SUMO_HTTP_TOKEN```.
