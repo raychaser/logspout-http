@@ -273,11 +273,11 @@ func (a *HTTPAdapter) flushHttp(reason string) {
 	payload := strings.Join(messages, "\n")
 
 	go func() {
-
+		start := time.Now()
 		for {
 			// Create the request and send it on its way
 			request := createRequest(a.url, a.user, a.password, a.useGzip, payload)
-			start := time.Now()
+			start = time.Now()
 			response, err := a.client.Do(request)
 			if err != nil {
 				debug("http - error on client.Do:", err, a.url)
@@ -289,7 +289,7 @@ func (a *HTTPAdapter) flushHttp(reason string) {
 				}
 			}
 			if response.StatusCode != 200 {
-				log.Printl("http: response not 200 but", response.StatusCode)
+				log.Println("http: response not 200 but", response.StatusCode)
 				// TODO @raychaser - now what?
 				if a.crash {
 					die("http: response not 200 but", response.StatusCode)
