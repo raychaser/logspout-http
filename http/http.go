@@ -287,25 +287,25 @@ func (a *HTTPAdapter) flushHttp(reason string) {
 				} else {
 					log.Println("http: error on client.Do:", err)
 				}
-			}
-			if response.StatusCode != 200 {
-				log.Println("http: response not 200 but", response.StatusCode)
-				// TODO @raychaser - now what?
-				if a.crash {
-					die("http: response not 200 but", response.StatusCode)
+			} else {
+				if response.StatusCode != 200 {
+					log.Println("http: response not 200 but", response.StatusCode)
+					// TODO @raychaser - now what?
+					if a.crash {
+						die("http: response not 200 but", response.StatusCode)
+					}
+				}
+
+				// Make sure the entire response body is read so the HTTP
+				// connection can be reused
+				io.Copy(ioutil.Discard, response.Body)
+				response.Body.Close()
+				if (err == nil && response.StatusCode == 200) {
+					break
 				}
 			}
-
-			// Make sure the entire response body is read so the HTTP
-			// connection can be reused
-			io.Copy(ioutil.Discard, response.Body)
-			response.Body.Close()
-			if (err == nil && response.StatusCode == 200) {
-				break
-			} else {
-				log.Println("retrying after 2s...")
-				time.Sleep(time.Second * 2)
-			}
+			log.Println("retrying after 2s...")
+			time.Sleep(time.Second * 2)
 		}
 		// Bookkeeping, logging
 		timeAll := time.Since(start)
