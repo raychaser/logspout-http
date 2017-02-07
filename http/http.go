@@ -210,11 +210,13 @@ func (a *HTTPAdapter) Stream(logstream chan *router.Message) {
 
 			// Flush if the buffer is at capacity
 			if len(a.buffer) >= cap(a.buffer) {
+				debug("full - flush")
 				a.flushHttp("full")
 			}
 		case <-a.timer.C:
 
 			// Timeout, flush
+			debug("timeout - flush")
 			a.flushHttp("timeout")
 		}
 	}
@@ -274,6 +276,8 @@ func (a *HTTPAdapter) flushHttp(reason string) {
 
 	go func() {
 		start := time.Now()
+		try := 0
+		max_tries := 5
 		for {
 			// Create the request and send it on its way
 			request := createRequest(a.url, a.user, a.password, a.useGzip, payload)
@@ -304,8 +308,15 @@ func (a *HTTPAdapter) flushHttp(reason string) {
 					break
 				}
 			}
-			log.Println("retrying after 2s...")
-			time.Sleep(time.Second * 2)
+
+			if (try < max_tries) {
+				log.Println("retrying after", 2 ** (try + 1), "s...")
+				time.Sleep(time.Second * 2 ** (try + 1))
+			} else {
+				log.Println("stop retrying - logs lost")
+				break
+			}
+			try = try + 1
 		}
 		// Bookkeeping, logging
 		timeAll := time.Since(start)
