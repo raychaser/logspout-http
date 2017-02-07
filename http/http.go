@@ -316,7 +316,7 @@ func (a *HTTPAdapter) flushHttp(reason string) {
 				log.Println("stop retrying - logs lost")
 				break
 			}
-			try = try + 1
+			try++
 		}
 		// Bookkeeping, logging
 		timeAll := time.Since(start)
