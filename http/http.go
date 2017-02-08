@@ -277,7 +277,7 @@ func (a *HTTPAdapter) flushHttp(reason string) {
 
 	go func() {
 		start := time.Now()
-		try := 0
+		try := 0.
 		max_tries := 5
 		for {
 			// Create the request and send it on its way
