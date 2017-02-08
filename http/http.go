@@ -240,6 +240,7 @@ func (a *HTTPAdapter) flushHttp(reason string) {
 	if len(a.buffer) < 1 {
 		return
 	}
+	debug("processing ", len(a.buffer), " log entries...")
 
 	// Capture the buffer and make a new one
 	a.bufferMutex.Lock()
@@ -311,10 +312,10 @@ func (a *HTTPAdapter) flushHttp(reason string) {
 			}
 
 			if (try < max_tries) {
-				log.Println("retrying after", math.Exp2(float64(try + 1)), "s...")
-				time.Sleep(time.Second * time.Duration(math.Exp2(float64(try + 1))))
+				log.Println("retrying after", math.Exp2(float64(2 * try + 1)), "s...")
+				time.Sleep(time.Second * time.Duration(math.Exp2(float64(2 * try + 1))))
 			} else {
-				log.Println("stop retrying - logs lost")
+				log.Println("stop retrying. ", len(buffer), " log entries lost")
 				break
 			}
 			try++
