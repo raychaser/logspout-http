@@ -277,7 +277,7 @@ func (a *HTTPAdapter) flushHttp(reason string) {
 
 	go func() {
 		start := time.Now()
-		try := 0.
+		try := 0
 		max_tries := 5
 		for {
 			// Create the request and send it on its way
@@ -311,8 +311,8 @@ func (a *HTTPAdapter) flushHttp(reason string) {
 			}
 
 			if (try < max_tries) {
-				log.Println("retrying after", math.Exp2(try + 1.), "s...")
-				time.Sleep(time.Second * time.Duration(math.Exp2(try + 1.)))
+				log.Println("retrying after", math.Exp2(float64(try + 1)), "s...")
+				time.Sleep(time.Second * time.Duration(math.Exp2(float64(try + 1))))
 			} else {
 				log.Println("stop retrying - logs lost")
 				break
