@@ -310,8 +310,8 @@ func (a *HTTPAdapter) flushHttp(reason string) {
 			}
 
 			if (try < max_tries) {
-				log.Println("retrying after", 2 ** (try + 1), "s...")
-				time.Sleep(time.Second * 2 ** (try + 1))
+				log.Println("retrying after", 2 ^ (try + 1), "s...")
+				time.Sleep(time.Second * 2 ^ (try + 1))
 			} else {
 				log.Println("stop retrying - logs lost")
 				break
